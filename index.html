@@ -6,18 +6,253 @@
 
 		<title>reveal.js</title>
 
-		<link rel="stylesheet" href="dist/reset.css">
-		<link rel="stylesheet" href="dist/reveal.css">
-		<link rel="stylesheet" href="dist/theme/black.css">
+		<link rel="stylesheet" href="./dist/reset.css">
+		<link rel="stylesheet" href="./dist/reveal.css">
+		<link rel="stylesheet" href="./dist/theme/black.css">
 
 		<!-- Theme used for syntax highlighted code -->
-		<link rel="stylesheet" href="plugin/highlight/monokai.css">
+		<link rel="stylesheet" href="./plugin/highlight/monokai.css">
 	</head>
 	<body>
 		<div class="reveal">
 			<div class="slides">
-				<section>Slide 1</section>
-				<section>Slide 2</section>
+				<!-- 1 -->
+				<section>WebRTC (Web Real-Time Communications)</section>
+				<!-- 2 -->
+				<section>
+				  <img src="./assets/start.png" alt="start" style="opacity: 0.7; border-radius: 20px;"/>
+				</section>
+				<!-- 3 -->
+				<section><img src="./assets/brauzer.png" alt="start" style="opacity: 0.7; border-radius: 20px; max-height: 400px;"/></section>
+				<!-- 4 -->
+				<section><img src="./assets/i.webp" alt="start" style="opacity: 0.7; border-radius: 20px; max-height: 400px;"/></section>
+				<!-- 5 -->
+				<section>
+					git clone <a href="https://webrtc.googlesource.com/src">https://webrtc.googlesource.com/src</a>
+					<p class="fragment fade-in-then-out">supported by <span>Apple, Google, Microsoft and Mozilla.</span></p>
+				</section>
+				<!-- 6 -->
+				<section>
+					Application flow
+						<p class="fragment">Accessing the media devices</p>
+						<p class="fragment">Opening peer connections</p>
+						<p class="fragment">Discovering peers</p> 
+						<p class="fragment">Start streaming</p>
+				</section>
+				<!-- 7 -->
+				<section>
+					MediaStreams
+					<p class="fragment">RTCPeerConnection</p>
+				</section>
+				<!-- 8 -->
+				<section data-auto-animate>
+					<p>Accessing cameras and microphones connected to 
+						the computer or smartphone with JavaScript through the <span style="font-weight: bold; color: #42affa;">navigator.mediaDevices</span>
+					</p>
+					<pre data-id="code-animation"><code style="opacity: 0.7; border-radius: 20px; width: fit-content;" class="hljs javascript" data-trim data-line-numbers>
+						const constraints = {
+							'video': true,
+							'audio': true
+						}
+						navigator.mediaDevices.getUserMedia(constraints)
+							.then(stream => {
+								console.log('Got MediaStream:', stream);
+							})
+							.catch(error => {
+								console.error('Error accessing media devices.', error);
+							});
+					</code></pre>
+				</section>
+				<!-- 9 -->
+				<section data-auto-animate>
+					<h3>Querying media devices</h3>
+					<pre data-id="code-animation"><code style="opacity: 0.7; border-radius: 20px; width: fit-content;" class="hljs javascript" data-trim data-line-numbers>
+						function getConnectedDevices(type, callback) {
+							navigator.mediaDevices.enumerateDevices()
+								.then(devices => {
+									const filtered = devices.filter(device => device.kind === type);
+									callback(filtered);
+								});
+						}
+						
+						getConnectedDevices('videoinput', (cameras) => {
+							console.log('Cameras found', cameras)
+						});
+					</code></pre>
+				</section>
+				<!-- 10 -->
+				<section data-auto-animate>
+					<h5>Listening for devices changes</h5>
+					<pre data-id="code-animation"><code style="opacity: 0.7; border-radius: 20px; font-size: 14px; line-height: 15px;" class="hljs javascript" data-trim data-line-numbers>
+						// Updates the select element with the provided set of cameras
+						function updateCameraList(cameras) {
+							const listElement = document.querySelector('select#availableCameras');
+							listElement.innerHTML = '';
+							cameras.map(camera => {
+								const cameraOption = document.createElement('option');
+								cameraOption.label = camera.label;
+								cameraOption.value = camera.deviceId;
+							}).forEach(cameraOption => listElement.add(cameraOption));
+						}
+						
+						// Fetch an array of devices of a certain type
+						async function getConnectedDevices(type) {
+							const devices = await navigator.mediaDevices.enumerateDevices();
+							return devices.filter(device => device.kind === type)
+						}
+						
+						// Get the initial set of cameras connected
+						const videoCameras = getConnectedDevices('videoinput');
+						updateCameraList(videoCameras);
+						
+						// Listen for changes to media devices and update the list accordingly
+						navigator.mediaDevices.addEventListener('devicechange', event => {
+							const newCameraList = getConnectedDevices('video');
+							updateCameraList(newCameraList);
+						});
+					</code></pre>
+				</section>
+				<!-- 11 -->
+				<section data-auto-animate style="margin-left: 10px;">
+					<h3>Local playback</h3>
+					<pre data-id="code-animation"><code style="opacity: 0.7; border-radius: 20px; width: 1100px;" class="hljs javascript" data-trim data-line-numbers>
+						async function playVideoFromCamera() {
+							try {
+								const constraints = {'video': true, 'audio': true};
+								const stream = await navigator.mediaDevices.getUserMedia(constraints);
+								const videoElement = document.querySelector('video#localVideo');
+								videoElement.srcObject = stream;
+							} catch(error) {
+								console.error('Error opening video camera.', error);
+							}
+						}
+					</code></pre>
+				</section>
+				<!-- 12 -->
+				<section data-auto-animate data-markdown style="opacity: 0.7; border-radius: 20px; width: fit-content; margin: auto; width: 1200px;">
+					<script type="html">
+						### The HTML needed for a typical video element 
+						```html []
+						<html>
+							<head><title>Local video playback</title></head>
+							<body>
+								<video id="localVideo" autoplay playsinline controls="false"/>
+							</body>
+						</html>
+						```
+					</script>
+				</section>
+
+				<!-- 13 -->
+				<section data-auto-animate style="margin-left: 10px;">
+					<h3>Media capture and constraints</h3>
+					<pre data-id="code-animation"><code style="opacity: 0.7; border-radius: 20px; width: 1100px;" class="hljs javascript" data-trim data-line-numbers>
+						async function playVideoFromCamera() {
+							try {
+								const constraints = {'video': true, 'audio': true};
+								const stream = await navigator.mediaDevices.getUserMedia(constraints);
+								const videoElement = document.querySelector('video#localVideo');
+								videoElement.srcObject = stream;
+							} catch(error) {
+								console.error('Error opening video camera.', error);
+							}
+						}
+					</code></pre>
+				</section>
+				<!-- 14 -->
+				<section>Getting started with peer connections</section>
+				<!-- 15 -->
+				<section data-auto-animate style="margin-left: 10px;">
+					<h3>Signaling</h3>
+					<pre data-id="code-animation"><code style="opacity: 0.7; border-radius: 20px; width: 1100px;" class="hljs javascript" data-trim data-line-numbers>
+						// Set up an asynchronous communication channel that will be
+						// used during the peer connection setup
+						const signalingChannel = new SignalingChannel(remoteClientId);
+						signalingChannel.addEventListener('message', message => {
+							// New message from remote client received
+						});
+						
+						// Send an asynchronous message to the remote client
+						signalingChannel.send('Hello!');
+					</code></pre>
+				</section>
+				<!-- 16 -->
+				<section>Initiating peer connections</section>
+				<!-- 17 -->
+				<section data-auto-animate style="margin-left: 10px;">
+					<h3>Initiating peer connections</h3>
+					<pre data-id="code-animation"><code style="opacity: 0.7; border-radius: 20px; width: 1200px;" class="hljs javascript" data-trim data-line-numbers>
+						async function makeCall() {
+							const configuration = {'iceServers': [{'urls': 'stun:stun.l.google.com:19302'}]}
+							const peerConnection = new RTCPeerConnection(configuration);
+							signalingChannel.addEventListener('message', async message => {
+								if (message.answer) {
+									const remoteDesc = new RTCSessionDescription(message.answer);
+									await peerConnection.setRemoteDescription(remoteDesc);
+								}
+							});
+							const offer = await peerConnection.createOffer();
+							await peerConnection.setLocalDescription(offer);
+							signalingChannel.send({'offer': offer});
+						}
+					</code></pre>
+				</section>
+				<!-- 18 -->
+				<section data-auto-animate style="margin-left: 10px;">
+					<h3>Receiving side</h3>
+					<pre data-id="code-animation"><code style="opacity: 0.7; border-radius: 20px; width: 1200px;" class="hljs javascript" data-trim data-line-numbers>
+						const peerConnection = new RTCPeerConnection(configuration);
+						signalingChannel.addEventListener('message', async message => {
+							if (message.offer) {
+								peerConnection.setRemoteDescription(new RTCSessionDescription(message.offer));
+								const answer = await peerConnection.createAnswer();
+								await peerConnection.setLocalDescription(answer);
+								signalingChannel.send({'answer': answer});
+							}
+						});
+					</code></pre>
+				</section>
+				<!-- 19 -->
+				<section>ICE candidatess</section>
+				<!-- 20 -->
+				<section data-auto-animate>
+					<h3>Trickle ICE</h3>
+					<pre data-id="code-animation" class="fragment"><code style="opacity: 0.7; border-radius: 20px; width: 1200px;" class="hljs javascript" data-trim data-line-numbers>
+						// Listen for local ICE candidates on the local RTCPeerConnection
+						peerConnection.addEventListener('icecandidate', event => {
+							if (event.candidate) {
+								signalingChannel.send({'new-ice-candidate': event.candidate});
+							}
+						});
+						
+						// Listen for remote ICE candidates and add them to the local RTCPeerConnection
+						signalingChannel.addEventListener('message', async message => {
+							if (message.iceCandidate) {
+								try {
+									await peerConnection.addIceCandidate(message.iceCandidate);
+								} catch (e) {
+									console.error('Error adding received ice candidate', e);
+								}
+							}
+						});
+					</code></pre>
+				</section>
+				<!-- 21 -->
+				<section data-auto-animate>
+					<h3>Connection established</h3>
+					<pre data-id="code-animation" class="fragment"><code style="opacity: 0.7; border-radius: 20px; width: 1200px;" class="hljs javascript" data-trim data-line-numbers>
+						// Listen for connectionstatechange on the local RTCPeerConnection
+						peerConnection.addEventListener('connectionstatechange', event => {
+							if (peerConnection.connectionState === 'connected') {
+								// Peers connected!
+							}
+						});
+					</code></pre>
+				</section>
+				<!-- 22 -->
+				<section>
+					<h2>Happy coding</h2>
+				</section>
 			</div>
 		</div>
 
@@ -26,15 +261,15 @@
 		<script src="plugin/markdown/markdown.js"></script>
 		<script src="plugin/highlight/highlight.js"></script>
 		<script>
-			// More info about initialization & config:
-			// - https://revealjs.com/initialization/
-			// - https://revealjs.com/config/
 			Reveal.initialize({
 				hash: true,
-
-				// Learn about plugins: https://revealjs.com/plugins/
-				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+				slideNumber: true,
+				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ],
+				parallaxBackgroundImage: './assets/bg.jpg',
+				parallaxBackgroundSize: '1980px 1125px',
+				width: 1200,
+				height: 700,
 			});
-		</script>
+			</script>
 	</body>
 </html>
